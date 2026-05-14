@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 import pubchempy as pcp
 
 # Rule-based dictionary: Indonesian chemical terms → English

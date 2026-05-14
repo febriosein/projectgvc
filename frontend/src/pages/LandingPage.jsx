@@ -46,9 +46,13 @@ const LandingPage = () => {
         });
       }
     } catch (err) {
-      const msg =
-        err.response?.data?.detail ||
-        'Terjadi kesalahan saat memproses gambar. Pastikan gambar cukup jelas dan terang.';
+      let msg;
+      if (err.response?.status === 429) {
+        msg = '⚠️ Kuota semua API AI (Gemini & Groq) telah habis sementara. Silakan coba lagi dalam beberapa menit, atau gunakan pencarian teks sebagai alternatif.';
+      } else {
+        msg = err.response?.data?.detail ||
+          'Terjadi kesalahan saat memproses gambar. Pastikan gambar cukup jelas dan terang.';
+      }
       setError(msg);
     } finally {
       setLoading(false);
@@ -60,10 +64,10 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section className="flex flex-col items-center text-center max-w-3xl mx-auto gap-stack-md">
         <h1 className="font-headline-xl text-headline-lg-mobile md:text-headline-xl text-on-surface tracking-tight">
-          Discover Molecules Instantly
+          Temukan Molekul Secara Instan
         </h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
-          Input chemical identifiers or upload structural diagrams for instant, AI-driven analysis, property prediction, and robust data extraction.
+          Gunakan pengenal kimia atau unggah struktur molekul untuk analisis bertenaga AI, prediksi karakteristik, dan ekstraksi data yang andal dalam sekejap.
         </p>
       </section>
 
@@ -76,7 +80,7 @@ const LandingPage = () => {
       {loading ? (
         <div className="flex flex-col items-center justify-center p-stack-xl gap-stack-md">
           <div className="w-12 h-12 border-4 border-secondary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-body-md text-on-surface-variant">Menganalisis dengan AI (Gemini)...</p>
+          <p className="font-body-md text-on-surface-variant">Menganalisis dengan AI...</p>
         </div>
       ) : (
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-gutter items-stretch">

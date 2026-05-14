@@ -1,26 +1,10 @@
 """
-Vercel serverless function for OCSR using Gemini API.
+Vercel serverless function for OCSR using AI providers with fallback.
 No RDKit validation here to keep the bundle size small.
 """
-import os
-from google import genai
 import pubchempy as pcp
+from api.services.ai_providers import CHEMISTRY_PROMPT, call_with_fallback
 
-client = genai.Client()
-
-CHEMISTRY_PROMPT = """
-You are a chemistry expert analyzing a chemical structure image.
-TASK: Identify the molecular structure in this image and output ONLY the SMILES notation.
-RULES:
-1. Analyze ALL bonds, atoms, and functional groups carefully
-2. Count hydrogens implicitly (do not add explicit H unless necessary)
-3. Use canonical SMILES format
-4. For aromatic rings, use lowercase letters (c, n, o)
-5. Output ONLY the SMILES string, nothing else. DO NOT INCLUDE MARKDOWN FORMATTING OR BACKTICKS.
-6. If the image shows a hand-drawn structure, interpret it generously
-7. If you cannot identify the structure, output "UNRECOGNIZED"
-OUTPUT: [SMILES string only]
-"""
 
 def validate_smiles_pubchem(smiles: str) -> bool:
     """Validate SMILES via PubChem (for Vercel without RDKit)"""
@@ -30,22 +14,12 @@ def validate_smiles_pubchem(smiles: str) -> bool:
     except:
         return False
 
+
 def process_image_to_smiles(image_bytes: bytes) -> str | None:
     try:
-        # For Vercel, we might not have PIL installed to save space,
-        # so we pass the bytes directly to Gemini by formatting it properly.
-        # Gemini API client can take dict with mime_type and data.
-        image_part = {
-            "mime_type": "image/jpeg", # Default to jpeg, API handles well usually
-            "data": image_bytes
-        }
+        raw_text = call_with_fallback("analyze_image", image_bytes, CHEMISTRY_PROMPT)
         
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[image_part, CHEMISTRY_PROMPT]
-        )
-        
-        smiles = response.text.strip().replace("```smiles", "").replace("```", "").strip()
+        smiles = raw_text.strip().replace("```smiles", "").replace("```", "").strip()
         
         if smiles == "UNRECOGNIZED" or not smiles:
             return None
@@ -54,8 +28,11 @@ def process_image_to_smiles(image_bytes: bytes) -> str | None:
         if validate_smiles_pubchem(smiles):
              return smiles
              
-        return smiles # return it anyway if pubchem validation fails as fallback
+        return smiles  # return it anyway if pubchem validation fails as fallback
         
+    except RuntimeError:
+        # Re-raise (ALL_PROVIDERS_EXHAUSTED) so the endpoint can handle it
+        raise
     except Exception as e:
-        print(f"Vercel Gemini Vision API error: {e}")
+        print(f"Vercel Vision API error: {e}")
         return None

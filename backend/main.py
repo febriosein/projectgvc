@@ -63,6 +63,18 @@ async def analyze_image(file: UploadFile = File(...)):
     # 1. Process Image to SMILES
     try:
         smiles = process_image_to_smiles(image_bytes)
+    except RuntimeError as e:
+        err_msg = str(e)
+        if "QUOTA" in err_msg or "EXHAUSTED" in err_msg:
+            raise HTTPException(
+                status_code=429,
+                detail="Kuota telah habis untuk saat ini. Silakan coba lagi dalam beberapa menit, atau gunakan fitur pencarian teks sebagai alternatif.",
+            )
+        print(f"Error processing image: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Terjadi kesalahan internal saat memproses gambar.",
+        )
     except Exception as e:
         print(f"Error processing image: {e}")
         smiles = None

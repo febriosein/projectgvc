@@ -1,5 +1,8 @@
-fastapi
-pubchempy==1.0.4
-fastapi==0.111.0
+fastapi>=0.111.0
+pydantic>=2.0.0
+pubchempy>=1.0.4
 google-genai>=1.0.0
-python-multipart
+python-multipart>=0.0.6
+Pillow>=10.0.0
+python-dotenv>=1.0.0
+groq>=0.9.0

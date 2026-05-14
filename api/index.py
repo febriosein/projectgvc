@@ -56,7 +56,18 @@ async def analyze_text(payload: TextQuery):
 async def analyze_image(file: UploadFile = File(...)):
     image_bytes = await file.read()
 
-    smiles = process_image_to_smiles(image_bytes)
+    try:
+        smiles = process_image_to_smiles(image_bytes)
+    except RuntimeError as e:
+        err_msg = str(e)
+        if "QUOTA" in err_msg or "EXHAUSTED" in err_msg:
+            raise HTTPException(
+                status_code=429,
+                detail="Semua kuota API AI (Gemini & Groq) telah habis. Silakan coba lagi nanti atau gunakan pencarian teks.",
+            )
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan internal.")
+    except Exception:
+        smiles = None
 
     if not smiles:
         raise HTTPException(

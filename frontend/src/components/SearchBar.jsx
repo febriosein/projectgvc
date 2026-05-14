@@ -22,24 +22,24 @@ const SearchBar = ({ onSearch }) => {
       <form onSubmit={handleSubmit} className="flex flex-col gap-stack-md flex-grow justify-center">
         <div className="flex flex-col gap-stack-xs">
           <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider" htmlFor="chemical-input">
-            IUPAC Name / SMILES String
+            IUPAC Name / Molecular Formula / SMILES String
           </label>
-          <input 
-            className="w-full bg-surface-muted border border-border-subtle rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all" 
-            id="chemical-input" 
-            placeholder="e.g., CC(=O)OC1=CC=CC=C1C(=O)O" 
+          <input
+            className="w-full bg-surface-muted border border-border-subtle rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
+            id="chemical-input"
+            placeholder="e.g. Benzena, 2,3-Dimethylbutane, NaCl, C6H12O6, Asam asetat"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <p className="font-label-sm text-label-sm text-on-surface-variant">
-          Enter a valid chemical identifier to generate 2D/3D models and retrieve physicochemical properties.
+          Masukkan pengidentifikasi kimia yang valid untuk menghasilkan model 2D/3D dan mengambil sifat fisikokimia.
         </p>
-        
+
         <div className="mt-auto pt-stack-sm">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={!query.trim()}
             className="w-full bg-primary text-on-primary font-button text-button py-3 rounded-lg hover:brightness-110 transition-all shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
