@@ -1,0 +1,19 @@
+6️⃣ Ringkasan Satu Perintah (Opsional)
+Jika semua dependensi sudah terpasang, Anda dapat memulai kedua server dalam dua tab PowerShell:
+
+Tab 1 (Backend)
+
+powershell
+cd C:\Users\mreno\Desktop\vibecode\backend
+.\venv\Scripts\Activate.ps1
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+Tab 2 (Frontend)
+
+powershell
+cd C:\Users\mreno\Desktop\vibecode\frontend
+npm run dev
+Akses aplikasi di http://localhost:5173. Selamat mencoba – antarmuka premium kini terhubung ke backend AI!
+
+google-genai>=1.0.0
+Pillow>=10.0.0
+python-dotenv>=1.0.0
