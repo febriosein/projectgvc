@@ -4,3 +4,147 @@
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Dark Mode - Simple Inversion */
+.dark {
+  --tw-bg-opacity: 1;
+  color-scheme: dark;
+}
+
+.dark .bg-surface-base {
+  background-color: #1a1a2e !important;
+}
+
+.dark .bg-surface-bright {
+  background-color: #0f0f23 !important;
+}
+
+.dark .bg-surface-muted {
+  background-color: #16213e !important;
+}
+
+.dark .bg-surface-container {
+  background-color: #1a1a2e !important;
+}
+
+.dark .bg-surface-container-low {
+  background-color: #141428 !important;
+}
+
+.dark .bg-surface-container-high {
+  background-color: #1e1e3a !important;
+}
+
+.dark .bg-surface-container-highest {
+  background-color: #252545 !important;
+}
+
+.dark .bg-surface-container-lowest {
+  background-color: #0d0d1f !important;
+}
+
+.dark .text-on-surface {
+  color: #e8e8f0 !important;
+}
+
+.dark .text-on-surface-variant {
+  color: #a0a0b8 !important;
+}
+
+.dark .text-primary {
+  color: #8ecae6 !important;
+}
+
+.dark .text-secondary {
+  color: #64b5f6 !important;
+}
+
+.dark .text-outline {
+  color: #6a6a80 !important;
+}
+
+.dark .border-border-subtle {
+  border-color: #2a2a45 !important;
+}
+
+.dark .bg-error-container {
+  background-color: #3d1417 !important;
+}
+
+.dark .text-on-error-container {
+  color: #ffa4a4 !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #16213e !important;
+  color: #e8e8f0 !important;
+  border-color: #2a2a45 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #6a6a80 !important;
+}
+
+/* Missing surface variants used in components */
+.dark .bg-surface {
+  background-color: #12122a !important;
+}
+
+.dark .bg-white {
+  background-color: #1a1a2e !important;
+}
+
+.dark .border-outline-variant {
+  border-color: #3a3a55 !important;
+}
+
+.dark .text-outline-variant {
+  color: #5a5a75 !important;
+}
+
+.dark .bg-surface-base\/80 {
+  background-color: rgba(26, 26, 46, 0.8) !important;
+}
+
+.dark .bg-primary {
+  background-color: #1a3a5c !important;
+}
+
+.dark .text-on-primary {
+  color: #e8e8f0 !important;
+}
+
+.dark .bg-secondary {
+  background-color: #1a4a7a !important;
+}
+
+.dark .text-on-secondary {
+  color: #e8e8f0 !important;
+}
+
+.dark .bg-surface-container-low\:hover:hover {
+  background-color: #141428 !important;
+}

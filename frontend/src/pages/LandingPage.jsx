@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SearchBar from '../components/SearchBar';
 import ImageUpload from '../components/ImageUpload';
+import { saveToHistory } from './HistoryPage';
 
 const API_BASE = '/api';
 
@@ -17,6 +18,13 @@ const LandingPage = () => {
     try {
       const response = await axios.post(`${API_BASE}/analyze/text`, { query });
       if (response.data) {
+        saveToHistory({
+          query,
+          type: 'text',
+          compoundName: response.data.metadata?.common_name || response.data.metadata?.iupac_name || query,
+          smiles: response.data.smiles,
+          resultData: response.data,
+        });
         navigate('/result', { state: { data: response.data } });
       }
     } catch (err) {
@@ -41,6 +49,13 @@ const LandingPage = () => {
       });
 
       if (response.data) {
+        saveToHistory({
+          query: file.name,
+          type: 'image',
+          compoundName: response.data.metadata?.common_name || response.data.metadata?.iupac_name || 'Image Recognition',
+          smiles: response.data.smiles,
+          resultData: response.data,
+        });
         navigate('/result', {
           state: { data: response.data, imageFile: URL.createObjectURL(file) },
         });
