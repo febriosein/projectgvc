@@ -98,10 +98,34 @@ const LandingPage = () => {
           <p className="font-body-md text-on-surface-variant">Menganalisis dengan AI...</p>
         </div>
       ) : (
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-gutter items-stretch">
-          <SearchBar onSearch={handleSearch} />
-          <ImageUpload onUpload={handleImageUpload} />
-        </section>
+        <>
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-gutter items-stretch">
+            <SearchBar onSearch={handleSearch} />
+            <ImageUpload onUpload={handleImageUpload} />
+          </section>
+
+          {/* Chat AI Banner */}
+          <section className="bg-surface-muted dark:bg-surface-container border border-border-subtle rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-secondary" style={{ fontSize: '32px' }}>smart_toy</span>
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-on-surface mb-1">Tanya ChemVision AI</h3>
+                <p className="text-sm text-on-surface-variant max-w-md">
+                  Punya pertanyaan seputar reaksi kimia, sifat molekul, atau konsep dasar? Diskusikan langsung dengan asisten AI kami.
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => navigate('/chat')} 
+              className="w-full md:w-auto shrink-0 bg-primary dark:bg-secondary text-on-primary dark:text-on-secondary px-6 py-3.5 rounded-xl font-medium text-sm hover:brightness-110 transition-all shadow-sm flex items-center justify-center gap-2"
+            >
+              Mulai Chat
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
+            </button>
+          </section>
+        </>
       )}
     </div>
   );

@@ -274,7 +274,7 @@ const ChatPage = () => {
         <div className={`
           ${sidebarOpen ? 'fixed left-0 top-16 bottom-0 w-72 z-50' : ''}
           md:relative md:top-auto md:bottom-auto md:left-auto
-          bg-surface-muted/30 dark:bg-surface-container/30 md:border-r border-border-subtle
+          bg-surface-muted dark:bg-surface-container-low md:border-r border-border-subtle
           flex flex-col h-full overflow-hidden
           shadow-xl md:shadow-none
         `}>
@@ -400,7 +400,7 @@ const ChatPage = () => {
                       setInput(starter.text);
                       setTimeout(() => inputRef.current?.focus(), 50);
                     }}
-                    className="flex flex-col items-start gap-2 p-4 rounded-2xl bg-surface-base dark:bg-surface-container-lowest border border-border-subtle hover:bg-surface-muted transition-all text-left group shadow-sm hover:shadow-md"
+                    className="flex flex-col items-start gap-2 p-4 rounded-2xl bg-surface-base dark:bg-surface-container-lowest border border-border-subtle hover:bg-surface-muted dark:hover:bg-surface-container transition-all text-left group shadow-sm hover:shadow-md"
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="material-symbols-outlined text-on-surface-variant group-hover:text-secondary transition-colors" style={{ fontSize: '20px' }}>

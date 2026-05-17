@@ -1,17 +1,40 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="w-full py-stack-xl px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-stack-md bg-surface-container-lowest dark:bg-primary-container border-t border-border-subtle dark:border-outline/10 mt-auto">
-      <div className="flex flex-col items-center md:items-start gap-stack-xs">
-        <span className="text-body-md md:text-body-lg font-headline-md font-bold text-primary dark:text-on-primary-fixed">Chem Vision AI</span>
-        <p className="text-label-sm md:text-body-md font-label-sm md:font-body-md text-secondary-fixed-dim dark:text-secondary-fixed-dim text-center md:text-left">© 2026 Chem Vision AI. Temukan Molekul Secara Instan.</p>
+    <footer className="w-full py-8 md:py-10 px-6 md:px-12 bg-surface-base dark:bg-surface-container-lowest border-t border-border-subtle mt-auto">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center md:items-start gap-8">
+        
+        {/* Brand Section */}
+        <div className="flex flex-col items-center md:items-start gap-2">
+          <div className="flex items-center gap-2 text-primary dark:text-on-surface">
+            <span className="material-symbols-outlined text-secondary" style={{ fontSize: '24px' }}>science</span>
+            <span className="text-lg font-headline-md font-bold tracking-tight">Chem Vision AI</span>
+          </div>
+          <p className="text-xs text-on-surface-variant text-center md:text-left">
+            Platform analisis struktur kimia berbasis AI terdepan.
+          </p>
+        </div>
+
+        {/* Links */}
+        <div className="flex flex-wrap justify-center gap-6">
+          <Link to="/" className="text-sm font-medium text-on-surface-variant hover:text-secondary transition-colors">Explorer</Link>
+          <Link to="/chat" className="text-sm font-medium text-on-surface-variant hover:text-secondary transition-colors">Chat AI</Link>
+          <Link to="/calculators" className="text-sm font-medium text-on-surface-variant hover:text-secondary transition-colors">Kalkulator</Link>
+        </div>
       </div>
-      <div className="flex flex-wrap justify-center gap-stack-md text-label-sm font-label-sm">
-        <a className="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed hover:underline transition-all opacity-80" href="#">Terms of Service</a>
-        <a className="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed hover:underline transition-all opacity-80" href="#">Privacy Policy</a>
-        <a className="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed hover:underline transition-all opacity-80" href="#">Contact Support</a>
-        <a className="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed hover:underline transition-all opacity-80" href="#">Status</a>
+
+      {/* Bottom Bar */}
+      <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-border-subtle flex flex-col-reverse md:flex-row justify-between items-center gap-4">
+        <p className="text-xs text-on-surface-variant text-center md:text-left">
+          © {new Date().getFullYear()} Chem Vision AI. Seluruh hak cipta dilindungi.
+        </p>
+        <div className="flex gap-4">
+          <a href="#" className="text-on-surface-variant hover:text-secondary transition-colors" title="Github">
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>code</span>
+          </a>
+        </div>
       </div>
     </footer>
   );
