@@ -260,7 +260,7 @@ const ChatPage = () => {
   // ─── Render ──────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] -mt-4 animate-fade-in bg-surface-base dark:bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+    <div className="flex h-[calc(100vh-4rem)] md:h-[calc(100vh-8rem)] -mt-16 md:-mt-4 -mb-12 md:mb-0 -mx-margin-mobile md:mx-0 animate-fade-in bg-surface-base dark:bg-surface-container-lowest rounded-none md:rounded-xl overflow-hidden shadow-none md:shadow-sm">
       {/* ═══ Sidebar ═══ */}
       <aside className={`
         ${sidebarOpen ? 'fixed inset-0 z-40 md:relative md:inset-auto' : 'hidden md:flex'}
@@ -375,10 +375,11 @@ const ChatPage = () => {
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {!activeConv || messages.length === 0 ? (
             /* Empty state */
-            <div className="flex flex-col items-center justify-center h-full text-center px-4 max-w-3xl mx-auto">
-              <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-secondary/20 to-tertiary/20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-secondary" style={{ fontSize: '36px' }}>smart_toy</span>
-              </div>
+            <div className="flex flex-col items-center min-h-full py-8 text-center px-4 max-w-3xl mx-auto">
+              <div className="my-auto flex flex-col items-center w-full">
+                <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-secondary/20 to-tertiary/20 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-secondary" style={{ fontSize: '36px' }}>smart_toy</span>
+                </div>
               <h1 className="text-3xl sm:text-4xl font-semibold text-on-surface mb-2 tracking-tight">
                 <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Halo,</span> ada yang bisa saya bantu?
               </h1>
@@ -412,6 +413,7 @@ const ChatPage = () => {
                 ))}
               </div>
             </div>
+          </div>
           ) : (
             /* Messages */
             <div className="space-y-4 max-w-3xl mx-auto">
