@@ -164,24 +164,21 @@ const ChatMessage = ({ message, isStreaming = false }) => {
 
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''} animate-fade-in`}>
-      {/* Avatar */}
-      <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm
-        ${isUser
-          ? 'bg-primary text-on-primary'
-          : 'bg-gradient-to-br from-secondary to-tertiary text-white'
-        }`}
-      >
-        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-          {isUser ? 'person' : 'smart_toy'}
-        </span>
-      </div>
+      {/* Avatar (Only for Assistant) */}
+      {!isUser && (
+        <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm bg-gradient-to-br from-secondary to-tertiary text-white mt-1">
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+            smart_toy
+          </span>
+        </div>
+      )}
 
       {/* Bubble */}
-      <div className={`max-w-[80%] md:max-w-[70%] flex flex-col gap-1`}>
-        <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed
+      <div className={`max-w-[80%] md:max-w-[85%] flex flex-col gap-1`}>
+        <div className={`text-sm leading-relaxed
           ${isUser
-            ? 'bg-primary text-on-primary rounded-tr-md'
-            : 'bg-surface-muted dark:bg-surface-container border border-border-subtle rounded-tl-md text-on-surface'
+            ? 'bg-surface-muted dark:bg-surface-container text-on-surface rounded-3xl px-5 py-3'
+            : 'text-on-surface py-2'
           }`}
         >
           {isUser ? (
@@ -196,7 +193,7 @@ const ChatMessage = ({ message, isStreaming = false }) => {
           )}
         </div>
         {time && (
-          <span className={`text-[10px] text-on-surface-variant px-1 ${isUser ? 'text-right' : ''}`}>
+          <span className={`text-[10px] text-on-surface-variant px-1 ${isUser ? 'text-right' : 'ml-2'}`}>
             {time}
           </span>
         )}

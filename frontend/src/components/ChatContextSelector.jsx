@@ -51,38 +51,34 @@ const ChatContextSelector = ({ selectedContext, onSelect, onClear }) => {
     <div className="relative">
       {/* Selected context display / trigger */}
       {selectedContext ? (
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-secondary/8 border border-secondary/20">
-          <span className="material-symbols-outlined text-secondary" style={{ fontSize: '18px' }}>science</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-secondary truncate">{selectedContext.name}</p>
-            <p className="text-[10px] text-on-surface-variant truncate font-mono">{selectedContext.formula || selectedContext.smiles}</p>
-          </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 w-max max-w-[240px]">
+          <span className="material-symbols-outlined text-secondary shrink-0" style={{ fontSize: '14px' }}>science</span>
+          <span className="text-xs font-medium text-secondary truncate">{selectedContext.name}</span>
           <button
             onClick={onClear}
-            className="p-1 rounded-lg hover:bg-surface-muted transition-colors shrink-0"
+            className="p-0.5 rounded-full hover:bg-secondary/20 transition-colors shrink-0 ml-1 flex items-center justify-center"
             title="Hapus konteks"
           >
-            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '16px' }}>close</span>
+            <span className="material-symbols-outlined text-secondary" style={{ fontSize: '14px' }}>close</span>
           </button>
         </div>
       ) : (
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center gap-2 p-2.5 rounded-xl border border-dashed border-border-subtle hover:border-secondary/40 transition-all text-left group"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border-subtle bg-surface-base dark:bg-surface-container-lowest hover:bg-surface-muted transition-all w-max"
         >
-          <span className="material-symbols-outlined text-on-surface-variant group-hover:text-secondary transition-colors" style={{ fontSize: '18px' }}>
-            add_circle
+          <span className="material-symbols-outlined text-on-surface-variant shrink-0" style={{ fontSize: '16px' }}>
+            add
           </span>
-          <span className="text-xs text-on-surface-variant group-hover:text-secondary transition-colors">
-            Tambah konteks molekul
+          <span className="text-xs font-medium text-on-surface-variant">
+            Konteks
           </span>
         </button>
       )}
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-surface-base dark:bg-surface-container-lowest border border-border-subtle rounded-xl shadow-xl overflow-hidden"
-             style={{ animation: 'slideDown 0.2s ease-out' }}>
+        <div className="absolute left-0 bottom-full mb-2 w-[280px] z-50 bg-surface-base dark:bg-surface-container-lowest border border-border-subtle rounded-2xl shadow-xl overflow-hidden animate-fade-in">
           {/* Search */}
           <div className="p-2 border-b border-border-subtle">
             <div className="relative">
