@@ -7,6 +7,7 @@ import { saveToHistory } from '../pages/HistoryPage';
 
 const NAV_LINKS = [
   { path: '/', label: 'Explorer', icon: 'explore' },
+  { path: '/chat', label: 'Chat AI', icon: 'smart_toy' },
   { path: '/history', label: 'History', icon: 'history' },
   { path: '/calculators', label: 'Calculators', icon: 'calculate' },
 ];

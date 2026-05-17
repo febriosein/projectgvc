@@ -1,5 +1,9 @@
+import json
+import traceback
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import uvicorn
 from dotenv import load_dotenv
@@ -10,6 +14,7 @@ load_dotenv()
 from services.nlp_service import translate_and_get_smiles
 from services.vision_service import process_image_to_smiles
 from services.chemistry_service import get_chemical_data_from_smiles
+from services.chat_service import stream_chat, get_available_models
 
 app = FastAPI(title="Chemistry Analysis Platform API")
 
@@ -25,6 +30,13 @@ app.add_middleware(
 
 class TextQuery(BaseModel):
     query: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[dict]
+    provider_id: str
+    model_id: str | None = None
+    chemical_context: dict | None = None
 
 
 @app.get("/api/health")
@@ -90,6 +102,50 @@ async def analyze_image(file: UploadFile = File(...)):
     chemical_data["source"] = "Image Recognition"
 
     return chemical_data
+
+
+# ─── Chat AI Endpoints ────────────────────────────────────────────────────────
+
+
+@app.get("/api/chat/models")
+async def chat_models():
+    """Return list of available AI models for chat."""
+    return {"models": get_available_models()}
+
+
+@app.post("/api/chat")
+async def chat(payload: ChatRequest):
+    """Streaming chat endpoint using Server-Sent Events (SSE)."""
+    if not payload.messages:
+        raise HTTPException(status_code=400, detail="Messages cannot be empty")
+
+    def event_stream():
+        try:
+            for chunk in stream_chat(
+                messages=payload.messages,
+                provider_id=payload.provider_id,
+                model_id=payload.model_id,
+                chemical_context=payload.chemical_context,
+            ):
+                # SSE format: data: <content>\n\n
+                data = json.dumps({"content": chunk})
+                yield f"data: {data}\n\n"
+            # Signal completion
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except Exception as e:
+            traceback.print_exc()
+            error_data = json.dumps({"error": str(e)})
+            yield f"data: {error_data}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 if __name__ == "__main__":

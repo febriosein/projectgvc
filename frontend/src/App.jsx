@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage'
 import ResultPage from './pages/ResultPage'
 import HistoryPage from './pages/HistoryPage'
 import CalculatorsPage from './pages/CalculatorsPage'
+import ChatPage from './pages/ChatPage'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 
@@ -17,6 +18,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/result" element={<ResultPage />} />
+            <Route path="/chat" element={<ChatPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/calculators" element={<CalculatorsPage />} />
           </Routes>
