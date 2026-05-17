@@ -1,9 +1,8 @@
 """
 Chat Service — Handles multi-turn chemistry chat with streaming responses.
-Supports multiple AI providers (Gemini, Groq, OpenRouter) with model selection.
+Automatic model fallback: tries models in priority order until one succeeds.
 """
 import os
-import json
 import traceback
 
 # ─── System Prompt ─────────────────────────────────────────────────────────────
@@ -59,7 +58,25 @@ def build_system_prompt(chemical_context: dict | None = None) -> str:
     return prompt
 
 
-# ─── Provider-specific streaming ───────────────────────────────────────────────
+# ─── Model definitions with priority order ─────────────────────────────────────
+
+# Each entry: (provider, model_id, display_name)
+# Order = fallback priority: Gemini first, then GPT, Llama, then others
+MODEL_FALLBACK_CHAIN = [
+    ("gemini",     "gemini-2.5-flash",                        "Gemini 2.5 Flash"),
+    ("openrouter", "openai/gpt-4.1-nano",                     "GPT-4.1 Nano"),
+    ("groq",       "meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout"),
+    ("openrouter", "openai/gpt-4.1-mini",                     "GPT-4.1 Mini"),
+    ("openrouter", "google/gemma-4-31b-it:free",              "Gemma 4 31B"),
+    ("openrouter", "google/gemma-4-26b-a4b-it:free",          "Gemma 4 26B MoE"),
+    ("openrouter", "deepseek/deepseek-v4-flash:free",         "DeepSeek V4 Flash"),
+    ("openrouter", "anthropic/claude-sonnet-4",               "Claude Sonnet 4"),
+    ("openrouter", "google/gemini-3.1-flash-lite",            "Gemini 3.1 Flash Lite"),
+    ("openrouter", "meta-llama/llama-4-maverick",             "Llama 4 Maverick"),
+]
+
+
+# ─── Provider-specific streaming (non-fallback, raises on error) ──────────────
 
 def _stream_gemini(messages: list[dict], system_prompt: str, model_id: str):
     """Stream chat response from Google Gemini API."""
@@ -72,7 +89,6 @@ def _stream_gemini(messages: list[dict], system_prompt: str, model_id: str):
 
     client = genai.Client(api_key=api_key)
 
-    # Build content list for Gemini
     contents = []
     for msg in messages:
         role = "user" if msg["role"] == "user" else "model"
@@ -86,7 +102,7 @@ def _stream_gemini(messages: list[dict], system_prompt: str, model_id: str):
     )
 
     response = client.models.generate_content_stream(
-        model=model_id or "gemini-2.5-flash",
+        model=model_id,
         contents=contents,
         config=config,
     )
@@ -111,7 +127,7 @@ def _stream_groq(messages: list[dict], system_prompt: str, model_id: str):
         groq_messages.append({"role": msg["role"], "content": msg["content"]})
 
     response = client.chat.completions.create(
-        model=model_id or "meta-llama/llama-4-scout-17b-16e-instruct",
+        model=model_id,
         messages=groq_messages,
         stream=True,
         max_tokens=4096,
@@ -145,7 +161,7 @@ def _stream_openrouter(messages: list[dict], system_prompt: str, model_id: str):
         or_messages.append({"role": msg["role"], "content": msg["content"]})
 
     response = client.chat.completions.create(
-        model=model_id or "openrouter/auto",
+        model=model_id,
         messages=or_messages,
         stream=True,
         max_tokens=4096,
@@ -156,127 +172,74 @@ def _stream_openrouter(messages: list[dict], system_prompt: str, model_id: str):
             yield chunk.choices[0].delta.content
 
 
-# ─── Provider routing ──────────────────────────────────────────────────────────
-
-_PROVIDER_MAP = {
+_PROVIDER_FN = {
     "gemini": _stream_gemini,
     "groq": _stream_groq,
     "openrouter": _stream_openrouter,
 }
 
 
-def stream_chat(messages: list[dict], provider_id: str, model_id: str | None = None,
-                chemical_context: dict | None = None):
+# ─── Auto-fallback streaming ──────────────────────────────────────────────────
+
+def _is_provider_available(provider: str) -> bool:
+    """Check if the provider's API key is configured."""
+    if provider == "gemini":
+        return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
+    if provider == "groq":
+        return bool(os.environ.get("GROQ_API_KEY"))
+    if provider == "openrouter":
+        return bool(os.environ.get("OPENROUTER_API_KEY"))
+    return False
+
+
+def stream_chat_with_fallback(messages: list[dict], chemical_context: dict | None = None):
     """
-    Stream chat response from the selected provider.
-    Yields text chunks as they arrive from the AI model.
+    Stream chat response with automatic model fallback.
+    Tries models in priority order. On failure, moves to next model.
+    
+    Yields tuples of: (event_type, data)
+      - ("model", model_name)   — which model is responding
+      - ("content", text_chunk) — streamed text
+      - ("error", message)      — all models failed
     """
     system_prompt = build_system_prompt(chemical_context)
 
-    stream_fn = _PROVIDER_MAP.get(provider_id)
-    if not stream_fn:
-        raise ValueError(f"Unknown provider: {provider_id}")
+    for provider, model_id, model_name in MODEL_FALLBACK_CHAIN:
+        if not _is_provider_available(provider):
+            print(f"[Chat] Skipping {model_name} — {provider} API key not set")
+            continue
 
-    yield from stream_fn(messages, system_prompt, model_id or "")
+        stream_fn = _PROVIDER_FN[provider]
 
+        try:
+            print(f"[Chat] Trying {model_name} ({model_id})...")
 
-# ─── Available models registry ────────────────────────────────────────────────
+            # Collect first chunk to verify the model actually works
+            # before signaling the model name to the frontend
+            stream = stream_fn(messages, system_prompt, model_id)
+            first_chunk = next(stream, None)
 
-def get_available_models() -> list[dict]:
-    """Return list of all available AI models grouped by provider."""
-    models = []
+            if first_chunk is None:
+                print(f"[Chat] ✗ {model_name} returned empty response, trying next...")
+                continue
 
-    # Gemini (direct API)
-    if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
-        models.append({
-            "id": "gemini-2.5-flash",
-            "name": "Gemini 2.5 Flash",
-            "provider": "gemini",
-            "provider_name": "Google",
-            "icon": "auto_awesome",
-            "description": "Model cepat dan efisien dari Google",
-            "free": True,
-        })
+            # Model works! Signal which model is responding, then stream
+            yield ("model", model_name)
+            yield ("content", first_chunk)
 
-    # Groq (direct API)
-    if os.environ.get("GROQ_API_KEY"):
-        models.append({
-            "id": "meta-llama/llama-4-scout-17b-16e-instruct",
-            "name": "Llama 4 Scout",
-            "provider": "groq",
-            "provider_name": "Meta (via Groq)",
-            "icon": "bolt",
-            "description": "Model open-source cepat via Groq",
-            "free": True,
-        })
+            for chunk in stream:
+                yield ("content", chunk)
 
-    # OpenRouter models
-    if os.environ.get("OPENROUTER_API_KEY"):
-        openrouter_models = [
-            {
-                "id": "openai/gpt-4.1-mini",
-                "name": "GPT-4.1 Mini",
-                "provider": "openrouter",
-                "provider_name": "OpenAI",
-                "icon": "psychology",
-                "description": "Model cerdas dan efisien dari OpenAI",
-                "free": False,
-            },
-            {
-                "id": "openai/gpt-4.1-nano",
-                "name": "GPT-4.1 Nano",
-                "provider": "openrouter",
-                "provider_name": "OpenAI",
-                "icon": "psychology",
-                "description": "Model ringan dan cepat dari OpenAI",
-                "free": False,
-            },
-            {
-                "id": "anthropic/claude-sonnet-4",
-                "name": "Claude Sonnet 4",
-                "provider": "openrouter",
-                "provider_name": "Anthropic",
-                "icon": "smart_toy",
-                "description": "Model analitis dan kreatif dari Anthropic",
-                "free": False,
-            },
-            {
-                "id": "deepseek/deepseek-chat-v3-0324:free",
-                "name": "DeepSeek V3 (Free)",
-                "provider": "openrouter",
-                "provider_name": "DeepSeek",
-                "icon": "explore",
-                "description": "Model gratis dan powerful dari DeepSeek",
-                "free": True,
-            },
-            {
-                "id": "google/gemini-2.5-flash-preview-05-20",
-                "name": "Gemini 2.5 Flash Preview",
-                "provider": "openrouter",
-                "provider_name": "Google (via OpenRouter)",
-                "icon": "auto_awesome",
-                "description": "Gemini terbaru via OpenRouter",
-                "free": False,
-            },
-            {
-                "id": "google/gemma-3-27b-it:free",
-                "name": "Gemma 3 27B (Free)",
-                "provider": "openrouter",
-                "provider_name": "Google",
-                "icon": "diamond",
-                "description": "Model open-source gratis dari Google",
-                "free": True,
-            },
-            {
-                "id": "meta-llama/llama-4-maverick:free",
-                "name": "Llama 4 Maverick (Free)",
-                "provider": "openrouter",
-                "provider_name": "Meta",
-                "icon": "bolt",
-                "description": "Model Llama terbaru gratis dari Meta",
-                "free": True,
-            },
-        ]
-        models.extend(openrouter_models)
+            print(f"[Chat] ✓ {model_name} completed successfully")
+            return  # Success — stop trying other models
 
-    return models
+        except StopIteration:
+            print(f"[Chat] ✗ {model_name} returned no content, trying next...")
+            continue
+        except Exception as e:
+            print(f"[Chat] ✗ {model_name} failed: {type(e).__name__}: {e}")
+            traceback.print_exc()
+            continue  # Try next model
+
+    # All models failed
+    yield ("error", "Semua model AI gagal merespons. Silakan coba lagi nanti.")

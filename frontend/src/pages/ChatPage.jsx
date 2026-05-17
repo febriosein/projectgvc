@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import ChatMessage from '../components/ChatMessage';
-import ModelSelector from '../components/ModelSelector';
 import ChatContextSelector from '../components/ChatContextSelector';
 
 const CONVERSATIONS_KEY = 'chemvision_conversations';
-const SELECTED_MODEL_KEY = 'chemvision_chat_model';
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
 
@@ -27,11 +24,6 @@ function generateId() {
 // ─── ChatPage Component ──────────────────────────────────────────────────────
 
 const ChatPage = () => {
-  // Models
-  const [models, setModels] = useState([]);
-  const [selectedModelId, setSelectedModelId] = useState(() => localStorage.getItem(SELECTED_MODEL_KEY) || '');
-  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
-
   // Conversations
   const [conversations, setConversations] = useState(() => loadConversations());
   const [activeConvId, setActiveConvId] = useState(null);
@@ -40,6 +32,7 @@ const ChatPage = () => {
   // Chat state
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [activeModel, setActiveModel] = useState(null); // Model name from backend
   const [chemicalContext, setChemicalContext] = useState(null);
 
   // Refs
@@ -50,23 +43,6 @@ const ChatPage = () => {
   // Get active conversation
   const activeConv = conversations.find(c => c.id === activeConvId);
   const messages = activeConv?.messages || [];
-
-  // ─── Fetch models on mount ───────────────────────────────────────────
-
-  useEffect(() => {
-    axios.get('/api/chat/models')
-      .then(res => {
-        const fetchedModels = res.data.models || [];
-        setModels(fetchedModels);
-        // Set default model if none selected
-        if (!selectedModelId && fetchedModels.length > 0) {
-          const defaultModel = fetchedModels.find(m => m.free) || fetchedModels[0];
-          setSelectedModelId(defaultModel.id);
-          localStorage.setItem(SELECTED_MODEL_KEY, defaultModel.id);
-        }
-      })
-      .catch(err => console.error('Failed to load models:', err));
-  }, []);
 
   // ─── Scroll to bottom on new messages ────────────────────────────────
 
@@ -93,6 +69,7 @@ const ChatPage = () => {
     setConversations(prev => [newConv, ...prev]);
     setActiveConvId(newConv.id);
     setChemicalContext(null);
+    setActiveModel(null);
     setSidebarOpen(false);
     setTimeout(() => inputRef.current?.focus(), 100);
     return newConv.id;
@@ -104,6 +81,7 @@ const ChatPage = () => {
     setConversations(prev => prev.filter(c => c.id !== convId));
     if (activeConvId === convId) {
       setActiveConvId(null);
+      setActiveModel(null);
     }
   };
 
@@ -117,7 +95,6 @@ const ChatPage = () => {
     let convId = activeConvId;
     if (!convId) {
       convId = createNewConversation();
-      // Need to wait for state update, so we'll inline the conversation creation
       const newConv = {
         id: convId,
         title: text.slice(0, 50),
@@ -126,7 +103,6 @@ const ChatPage = () => {
         updatedAt: Date.now(),
       };
       setConversations(prev => {
-        // Avoid duplicate if createNewConversation already added it
         const filtered = prev.filter(c => c.id !== convId);
         return [newConv, ...filtered];
       });
@@ -159,10 +135,7 @@ const ChatPage = () => {
 
     setInput('');
     setIsStreaming(true);
-
-    // Find the selected model's provider
-    const selectedModel = models.find(m => m.id === selectedModelId);
-    const providerId = selectedModel?.provider || 'gemini';
+    setActiveModel(null);
 
     // Build messages for API (without timestamps)
     const currentConv = conversations.find(c => c.id === convId);
@@ -179,8 +152,6 @@ const ChatPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: apiMessages,
-          provider_id: providerId,
-          model_id: selectedModelId,
           chemical_context: chemicalContext,
         }),
         signal: abortControllerRef.current.signal,
@@ -208,8 +179,23 @@ const ChatPage = () => {
           try {
             const data = JSON.parse(jsonStr);
 
+            // Model name event — backend tells us which model is responding
+            if (data.model) {
+              setActiveModel(data.model);
+              continue;
+            }
+
             if (data.error) {
-              accumulatedContent += `\n\n⚠️ Error: ${data.error}`;
+              accumulatedContent += `\n\n⚠️ ${data.error}`;
+              setConversations(prev => prev.map(c => {
+                if (c.id !== convId) return c;
+                const msgs = [...c.messages];
+                const lastMsg = msgs[msgs.length - 1];
+                if (lastMsg && lastMsg.role === 'assistant') {
+                  msgs[msgs.length - 1] = { ...lastMsg, content: accumulatedContent };
+                }
+                return { ...c, messages: msgs };
+              }));
               break;
             }
 
@@ -218,7 +204,6 @@ const ChatPage = () => {
             if (data.content) {
               accumulatedContent += data.content;
 
-              // Update the assistant message in-place
               setConversations(prev => prev.map(c => {
                 if (c.id !== convId) return c;
                 const msgs = [...c.messages];
@@ -272,17 +257,6 @@ const ChatPage = () => {
     }
   };
 
-  // ─── Model selection ─────────────────────────────────────────────────
-
-  const handleModelSelect = (model) => {
-    setSelectedModelId(model.id);
-    localStorage.setItem(SELECTED_MODEL_KEY, model.id);
-  };
-
-  // ─── Derived state ──────────────────────────────────────────────────
-
-  const selectedModelData = models.find(m => m.id === selectedModelId);
-
   // ─── Render ──────────────────────────────────────────────────────────
 
   return (
@@ -313,18 +287,6 @@ const ChatPage = () => {
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
               Chat Baru
             </button>
-          </div>
-
-          {/* Model Selector */}
-          <div className="p-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Model AI</p>
-            <ModelSelector
-              models={models}
-              selectedModel={selectedModelId}
-              onSelect={handleModelSelect}
-              isOpen={modelSelectorOpen}
-              onToggle={() => setModelSelectorOpen(!modelSelectorOpen)}
-            />
           </div>
 
           {/* Chemical Context */}
@@ -383,20 +345,18 @@ const ChatPage = () => {
             <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '20px' }}>menu</span>
           </button>
 
-          {/* Model info */}
-          {selectedModelData && (
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-secondary to-tertiary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-white" style={{ fontSize: '14px' }}>
-                  {selectedModelData.icon}
-                </span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-on-surface truncate">{selectedModelData.name}</p>
-                <p className="text-[10px] text-on-surface-variant">{selectedModelData.provider_name}</p>
-              </div>
+          {/* App title + active model */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-secondary to-tertiary flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-white" style={{ fontSize: '14px' }}>smart_toy</span>
             </div>
-          )}
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-on-surface truncate">ChemVision AI</p>
+              <p className="text-[10px] text-on-surface-variant">
+                {activeModel ? `✓ ${activeModel}` : 'Auto — model terbaik dipilih otomatis'}
+              </p>
+            </div>
+          </div>
 
           {/* Context badge */}
           {chemicalContext && (
