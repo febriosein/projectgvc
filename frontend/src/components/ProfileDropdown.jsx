@@ -66,7 +66,7 @@ const ProfileDropdown = ({ isOpen, onClose, anchorRef }) => {
             <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '18px' }}>verified</span>
             <span className="font-body-md text-body-md text-on-surface">Versi</span>
           </div>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">v1.0.0</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">v1.2.5</span>
         </div>
 
         <div className="flex items-center justify-between py-2">

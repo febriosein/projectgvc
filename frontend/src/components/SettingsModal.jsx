@@ -120,7 +120,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border-subtle text-center">
           <p className="font-label-sm text-label-sm text-on-surface-variant">
-            Chem Vision AI v1.0.0
+            Chem Vision AI v1.2.5
           </p>
         </div>
       </div>
