@@ -2,13 +2,18 @@
 Vercel Serverless Function – FastAPI entry point.
 All /api/* requests are routed here by vercel.json rewrites.
 """
+import json
+import traceback
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from api.services.nlp_service import translate_and_get_smiles
 from api.services.vision_service import process_image_to_smiles
 from api.services.chemistry_service import get_chemical_data_from_smiles
+from api.services.chat_service import stream_chat_with_fallback
 
 app = FastAPI(title="ChemVision AI – Vercel Serverless")
 
@@ -24,6 +29,11 @@ app.add_middleware(
 
 class TextQuery(BaseModel):
     query: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[dict]
+    chemical_context: dict | None = None
 
 
 @app.get("/api/health")
@@ -78,3 +88,40 @@ async def analyze_image(file: UploadFile = File(...)):
     chemical_data = get_chemical_data_from_smiles(smiles)
     chemical_data["source"] = "Image Recognition"
     return chemical_data
+
+
+# ─── Chat AI Endpoint ─────────────────────────────────────────────────────────
+
+
+@app.post("/api/chat")
+async def chat(payload: ChatRequest):
+    """Streaming chat with automatic model fallback via SSE."""
+    if not payload.messages:
+        raise HTTPException(status_code=400, detail="Messages cannot be empty")
+
+    def event_stream():
+        try:
+            for event_type, data in stream_chat_with_fallback(
+                messages=payload.messages,
+                chemical_context=payload.chemical_context,
+            ):
+                if event_type == "model":
+                    yield f"data: {json.dumps({'model': data})}\n\n"
+                elif event_type == "content":
+                    yield f"data: {json.dumps({'content': data})}\n\n"
+                elif event_type == "error":
+                    yield f"data: {json.dumps({'error': data})}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except Exception as e:
+            traceback.print_exc()
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
